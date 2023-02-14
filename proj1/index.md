@@ -214,8 +214,30 @@ techniques and no distortions with the other above methods.
 
 The following three images all use `P_NEAREST` with varied level sampling methods.
 
-|![Task 6 Me](./images/me.png)|![Task 6 Me](./images/me.png)|
+![Task 6 Me](./images/0.png)
+
+This image is created with zero level sampling. Notice that there are a lot of artifacts here. Parts of the image almost look like pure noise. This 
+is because the original image is a high resolution and is being down sampled. Whatever pixel is closest in the map gets rendered here, that means 
+that if the colors of the image change quickly over a short range, they are unlikely to be well sampled, resulting in the extreme aliasing seen 
+here. These issues are especially apparent in the pixel inspector, centered on my neck. The greenery around me is very noisy.
+
+![Task 6 Me](./images/nearest.png)
+
+This image uses
+
+![Task 6 Me](./images/linear.png)
 
 
+Level 0 `P_NEAREST`            | Level 0 `P_LINEAR`
+:-------------------------:|:-------------------------:
+|![Task 6 Me](./images/0.png)|![Task 6 Me](./images/zeroP.png)|
+
+Level Nearest `P_NEAREST`            | Level Nearest `P_LINEAR`
+:-------------------------:|:-------------------------:
+|![Task 6 Me](./images/nearest.png)|![Task 6 Me](./images/nearestP.png)|
+
+Level Linear `P_NEAREST`            | Level Linear `P_LINEAR`
+:-------------------------:|:-------------------------:
+|![Task 6 Me](./images/linear.png)|![Task 6 Me](./images/linearP.png)|
 
 
