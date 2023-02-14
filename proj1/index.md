@@ -163,3 +163,51 @@ rate increases the difference in quality becomes less apparent. This is expected
 so when supersampling itself is enabled, the two processes begin to approach similar results. In general, one would expect to get the largest 
 bilinear sampling effects on a non-supersampled image.
 
+## Task 6 - Level Sampling
+
+### Algorithm
+
+Level sampling works by texturing an image based on a mipmap at a level determined according to the size of the rendered image. The first step is 
+to determine at what level the mipmap should be sampled at. The starter code provides three pairs of u, v ratios which correspond to where in the 
+sample texture the x, y coordinates of the triangle will map. We can use these coordinates to determine the relative area of the sample, thus 
+allowing us to determine the appropriate sample level. To do this we first transform all three pairs of coordinates to their Barycentric 
+representations to make sure they properly represent the ratios of the x, y coordinates that we want. These coordinates, along with additional 
+information about which sample techniques we will be using to render a given image, are combined into a `SampleParams` struct which is then passed 
+into the texture object.
+
+All that information properly in place, we can actually calculate the level as a float. There are three settings:
+
+**L_ZERO** - we default to always using level 0 of the mipmap
+
+**L_NEAREST** - we transform the two additional sets of u, v Barycentric coordinates to pixel values and use them to calculate the size of the 
+texture region which we are sampling as the difference in minimum and maximum x and y coordinates of the area. From there we calculate the mipmap 
+level as `level = log2(max(diff_dx.norm(), diff_dy.norm()));` and round to the nearest integer.
+
+**L_LINEAR** - the process here is the same as in `L_NEAREST`, the difference being that we leave the level unrounded.
+
+The hard work of determining the appropriate mipmap level out of the way, we can now sample according to one of two techniques:
+
+**P_NEAREST** - in this case we simply sample the mipmap as described in Task 5, the only difference being that we use the level we have calculated 
+above. In the case that we determined the level linearly, we will default to using the floor of the level value.
+
+**P_LINEAR** - in the case where we have a continuous level variable from the final level determination method), this option will in effect perform 
+trilinear sampling as described in lecture. This means that we will floor and ceiling the level, giving us two different mipmap levels, sample from 
+each, and then lerp the two resulting texture colors proportionally to the significance of the level value. In the case where level is a whole number 
+(meaning the two first level determination methods), this case will behave the same way as `P_NEAREST` because the floor and ceiling of the level will 
+be the same and therefore we will linearly interpolate between the same two values, yielding no change.
+
+The below table illustrates some of the differences and trade offs of the various techniques explored throughout the project.
+
+|     | Pixel Sampling             | Level Sampling                |   Supersampling    |
+| ----------- | ----------- | ----------- | ----------- |
+|Speed |Fastest method | Middle, if averaging across multiple mipmap levels can slow down further| Slowest method (when sampling rates are high) because in effect samples at a higher resolution and then down samples that image|
+|Memory Usage|Minimal, all textures are directly rendered|Requires more memory as mipmap representation of texture is larger|Requires more memory the higher the sample rate, but in general use cases will be less memory intensive than level sampling and more so than pixel sampling|
+|Antialiasing|Creates artifacts, fails to “blend” high frequency signals, pixelates high res images|Reduces aliasing by using more resolution appropriate images given a level. Can further reduce aliasing by blending textures of adjacent levels (trilinear sampling) which helps dramatically when zooming|Reduces artifacts by “blending” them with nearby textures. Smooths colors to make images appear much less jagged|
+
+### An Example in Action
+
+As a final demonstration, I present some of my own images sampled according to the techniques described above. Here is a picture of me at Machu Picchu 
+from this past Winter break. This is the original image at a high resolution (or at least as high as my phone can take it) without any sampling 
+techniques and no distortions with the other above methods.
+
+The following three images all use `P_NEAREST` with varied level sampling methods.
