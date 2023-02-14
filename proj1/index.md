@@ -223,10 +223,21 @@ here. These issues are especially apparent in the pixel inspector, centered on m
 
 ![Task 6 Me](./images/nearest.png)
 
-This image uses
+This image uses nearest sampling, meaning that all textures are taken from the most appropriate mipmap level of the image. This creates a smoothed 
+effect. The full image appears somewhat blurry, but is overall more human parsable than the first. In the pixel inspector we can further see this. 
+Instead of noise like particles in the greenery, there seem to be patches of relatively uniform color. This approach actually does create some 
+additional artifacts as well. Notice that above Hyuna Picchu (the large mountain in the center) there are strange out of place pixels. Additionally, 
+many of the clouds have a somewhat pixelated look.
 
 ![Task 6 Me](./images/linear.png)
 
+This image uses linear sampling, meaning that it is sampling multiple mipmap levels. This produces far 
+and away the best results. In the pixel inspect we see a happy medium between the first two renders. The texture is somewhat smoothed as in the 
+second render, while retaining some of the randomness we would expect in the greenery which we had too much of in the first render. That noted, 
+there are still some issues in that the final image does lack some blending.
+
+The following images pairs are organized as follows: Those on the left are the same as the three just discussed above, those on the right are 
+those images with the same level setting, but this time with different pixel sampling levels.
 
 Level 0 `P_NEAREST`            | Level 0 `P_LINEAR`
 :-------------------------:|:-------------------------:
@@ -240,4 +251,7 @@ Level Linear `P_NEAREST`            | Level Linear `P_LINEAR`
 :-------------------------:|:-------------------------:
 |![Task 6 Me](./images/linear.png)|![Task 6 Me](./images/linearP.png)|
 
+There are not too many insights to be gathered from this comparison, as it is quite difficult to tell the images apart in the first place. 
+The biggest difference I would like to note is that the images on the right are generally blended slightly better than those on the left, 
+meaning that large jumps in differing textures get smoothed over.
 
