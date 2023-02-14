@@ -210,4 +210,12 @@ As a final demonstration, I present some of my own images sampled according to t
 from this past Winter break. This is the original image at a high resolution (or at least as high as my phone can take it) without any sampling 
 techniques and no distortions with the other above methods.
 
+![Task 6 Me](./images/me.png)
+
 The following three images all use `P_NEAREST` with varied level sampling methods.
+
+|![Task 6 Me](./images/me.png)|![Task 6 Me](./images/me.png)|
+
+
+
+
