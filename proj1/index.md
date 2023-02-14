@@ -93,7 +93,7 @@ sampling rate is higher there is a range of 16 shades of red possible for each p
 Translations are accomplished by using affine matrices to alter coordinates. Implementation of this part of the project was relativally 
 straightforward, and in effect is consists largely of creating matrices. As for the creative portion of this part of the project:
 
-![Task 3](./images.t31.PNG)
+![Task 3](./images/t31.png)
 
 I made the robot do the splits! To do this I had to add additional transforms to each of the four leg components of the robot. The first 
 involved rotating the legs 90 degrees. From there, the legs were properly rotated, but still in the same positions as before, so I had 
@@ -102,5 +102,50 @@ exercise helped to illustrate the order of transformations matters. In particula
 end of the starter code, only to find that it did not rotate the rectangle while maintaining its shape as I thought it would, but instead 
 turned it into a kind of kite shape. I learned that the rotations had to occur before the scaling in order for things to render the way I 
 wanted them to.
+
+## Task 4 - Barycentric Coordinates
+
+Barycentric coordinates allow for smooth interpolation of a texture across a rendered object. They work by characterizing a coordinate as 
+a linear combination of three attributes, scaled by values alpha, beta, and gamma. Once alpha, beta, and gamma have been determined by 
+solving a series of linear equations, they can be used to scale other coordinates, in this case texture coordinates, appropriately.
+
+![Task 4 Triangle](./images/t41.png)
+
+Here is an image showing a smoothly interpolated triangle. Notice that each color point is the result of a “blend” of the surrounding 
+colors, or, to be more specific, each point inside the triangle represents a blend of color proportional to its distance from each corner 
+of the triangle.
+
+![Task 4 Color Wheel](./images/t42.png)
+
+This image demonstrates the same effect as above but on a color wheel.
+
+## Task 5 - Pixel Sampling
+
+Much like going from Task 1 to Task 2, Task 5 is an extension of the work done in Task 4. In Task 4, we were given three colors and by 
+calculating Barycentric values of alpha, beta, and gamma, were able to blend and proportion those colors appropriately. Similarly for Task 
+5, we start, as before, by calculating alpha, beta, and gamma values. However, instead of directly using those values to average the colors, 
+we instead use them to construct two new points, `u` and `v`. `u` and `v `are the result of taking a linear combination to the three pairs 
+of given u, v texture ratios with Barycentric coordinates. From there, these two values are then used to return a texture mapping through either 
+nearest sampling or bilinear sampling.
+
+### Nearest Sampling 
+
+This approach works by taking `u` and `v`, scaling them up to the width and height of the texture (because they initially start as ratios 
+between 0 and 1), rounding that value to the nearest whole number, and finally sampling a texel from the mipmap at level 0. This method is 
+simple and cheap to compute.
+
+### Bilinear Sampling 
+
+This approach is more complicated. I employed the triple lerp method from the lecture slides. I began by scaling my values of `u` and `v` 
+and then flooring and ceiling them to create four pairs of coordinates representing the square created by finding the four nearest whole 
+value pixel points on the texture. This resulted in eight different variables (2 for each point) with some redundant information, but I left 
+the code this way intentionally so as to provide a clearer picture of the process. From there I took a lerp along the x axis of the horizontal 
+pairs of points, and with that information further took a lerp along the y axis, using the previously lerped coordinates. This allowed me to 
+effectively supersample the texture by averaging out the value of the four nearest points and returning the texel at that point. While more 
+accurate, this method is somewhat more expensive than nearest sampling due to the additional math required to find the exact sample location.
+
+Sampling Rate = 1 (No Supersampling)|  Sampling Rate = 4                     
+:----------------------------------:|:--------------------------------------:
+![Task 5 No SS Nearest](./images/nossnear.png)    |  ![Task 5 No SS Bilinear](./images/nossbil.png)      
 
 
