@@ -73,7 +73,7 @@ artificially “supersample” each point and line by placing `sample_rate` numb
 This means that when the color of a point or line is averaged with the other points, the average will always be equal to the original 
 color of a point or line.
 
-Sampling Rate = 1 (No Supersampling)|  Sampling Rate = 4                     | Sampling Rate = 16
+Sampling Rate = 1                   |  Sampling Rate = 4                     | Sampling Rate = 16
 :----------------------------------:|:--------------------------------------:|:--------------------------------------:
 ![Task 2 SR=1](./images/t21.png)    |  ![Task 2 SR=4](./images/t22.png)      |  ![Task 2 SR=16](./images/t23.png)
 
@@ -144,8 +144,70 @@ pairs of points, and with that information further took a lerp along the y axis,
 effectively supersample the texture by averaging out the value of the four nearest points and returning the texel at that point. While more 
 accurate, this method is somewhat more expensive than nearest sampling due to the additional math required to find the exact sample location.
 
-Sampling Rate = 1 (No Supersampling)|  Sampling Rate = 4                     
+| No Supersampling Nearest          | No Supersampling Bilinear                    
 :----------------------------------:|:--------------------------------------:
 ![Task 5 No SS Nearest](./images/nossnear.png)    |  ![Task 5 No SS Bilinear](./images/nossbil.png)      
 
+These images are not supersampled, their only difference is that the left one uses nearest sampleing and the right uses bilinear. As is apparent, 
+the bilinear image does a much better job at modeling the curves within the smeared Berkeley logo. This is because the bilinear version 
+averages out the textures near the sample region rather than just selecting them as is the case in nearest. This means that bilinear sampling 
+has a similar effect to super sampling because it will smooth large changes in texture by proportionally blending the sample texture with 
+nearby points on the textmap.
 
+| x16 Supersampling Nearest          | x16 Supersampling Bilinear                    
+:----------------------------------:|:--------------------------------------:
+![Task 5 SS Nearest](./images/ssnear.png)    |  ![Task 5 No Bilinear](./images/ssbil.png)      
+
+These images are supersampled with a rate of 16. Although the bilinear image still does a better job at representing curves, as the supersampling 
+rate increases the difference in quality becomes less apparent. This is expected because bilinear sampling is a process similar to super sampling, 
+so when supersampling itself is enabled, the two processes begin to approach similar results. In general, one would expect to get the largest 
+bilinear sampling effects on a non-supersampled image.
+
+## Task 6 - Level Sampling
+
+### Algorithm
+
+Level sampling works by texturing an image based on a mipmap at a level determined according to the size of the rendered image. The first step is 
+to determine at what level the mipmap should be sampled at. The starter code provides three pairs of u, v ratios which correspond to where in the 
+sample texture the x, y coordinates of the triangle will map. We can use these coordinates to determine the relative area of the sample, thus 
+allowing us to determine the appropriate sample level. To do this we first transform all three pairs of coordinates to their Barycentric 
+representations to make sure they properly represent the ratios of the x, y coordinates that we want. These coordinates, along with additional 
+information about which sample techniques we will be using to render a given image, are combined into a `SampleParams` struct which is then passed 
+into the texture object.
+
+All that information properly in place, we can actually calculate the level as a float. There are three settings:
+
+**L_ZERO** - we default to always using level 0 of the mipmap
+
+**L_NEAREST** - we transform the two additional sets of u, v Barycentric coordinates to pixel values and use them to calculate the size of the 
+texture region which we are sampling as the difference in minimum and maximum x and y coordinates of the area. From there we calculate the mipmap 
+level as `level = log2(max(diff_dx.norm(), diff_dy.norm()));` and round to the nearest integer.
+
+**L_LINEAR** - the process here is the same as in `L_NEAREST`, the difference being that we leave the level unrounded.
+
+The hard work of determining the appropriate mipmap level out of the way, we can now sample according to one of two techniques:
+
+**P_NEAREST** - in this case we simply sample the mipmap as described in Task 5, the only difference being that we use the level we have calculated 
+above. In the case that we determined the level linearly, we will default to using the floor of the level value.
+
+**P_LINEAR** - in the case where we have a continuous level variable from the final level determination method), this option will in effect perform 
+trilinear sampling as described in lecture. This means that we will floor and ceiling the level, giving us two different mipmap levels, sample from 
+each, and then lerp the two resulting texture colors proportionally to the significance of the level value. In the case where level is a whole number 
+(meaning the two first level determination methods), this case will behave the same way as `P_NEAREST` because the floor and ceiling of the level will 
+be the same and therefore we will linearly interpolate between the same two values, yielding no change.
+
+The below table illustrates some of the differences and trade offs of the various techniques explored throughout the project.
+
+|     | Pixel Sampling             | Level Sampling                |   Supersampling    |
+| ----------- | ----------- | ----------- | ----------- |
+|Speed |Fastest method | Middle, if averaging across multiple mipmap levels can slow down further| Slowest method (when sampling rates are high) because in effect samples at a higher resolution and then down samples that image|
+|Memory Usage|Minimal, all textures are directly rendered|Requires more memory as mipmap representation of texture is larger|Requires more memory the higher the sample rate, but in general use cases will be less memory intensive than level sampling and more so than pixel sampling|
+|Antialiasing|Creates artifacts, fails to “blend” high frequency signals, pixelates high res images|Reduces aliasing by using more resolution appropriate images given a level. Can further reduce aliasing by blending textures of adjacent levels (trilinear sampling) which helps dramatically when zooming|Reduces artifacts by “blending” them with nearby textures. Smooths colors to make images appear much less jagged|
+
+### An Example in Action
+
+As a final demonstration, I present some of my own images sampled according to the techniques described above. Here is a picture of me at Machu Picchu 
+from this past Winter break. This is the original image at a high resolution (or at least as high as my phone can take it) without any sampling 
+techniques and no distortions with the other above methods.
+
+The following three images all use `P_NEAREST` with varied level sampling methods.
