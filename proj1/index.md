@@ -255,3 +255,4 @@ There are not too many insights to be gathered from this comparison, as it is qu
 The biggest difference I would like to note is that the images on the right are generally blended slightly better than those on the left, 
 meaning that large jumps in differing textures get smoothed over.
 
+Write up link: https://alexschedel.github.io/AlexSchedel-cs284a-writeups/
