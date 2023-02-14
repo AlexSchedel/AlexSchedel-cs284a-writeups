@@ -73,7 +73,7 @@ artificially “supersample” each point and line by placing `sample_rate` numb
 This means that when the color of a point or line is averaged with the other points, the average will always be equal to the original 
 color of a point or line.
 
-Sampling Rate = 1 (No Supersampling)|  Sampling Rate = 4                     | Sampling Rate = 16
+Sampling Rate = 1                   |  Sampling Rate = 4                     | Sampling Rate = 16
 :----------------------------------:|:--------------------------------------:|:--------------------------------------:
 ![Task 2 SR=1](./images/t21.png)    |  ![Task 2 SR=4](./images/t22.png)      |  ![Task 2 SR=16](./images/t23.png)
 
@@ -144,8 +144,22 @@ pairs of points, and with that information further took a lerp along the y axis,
 effectively supersample the texture by averaging out the value of the four nearest points and returning the texel at that point. While more 
 accurate, this method is somewhat more expensive than nearest sampling due to the additional math required to find the exact sample location.
 
-Sampling Rate = 1 (No Supersampling)|  Sampling Rate = 4                     
+| No Supersampling Nearest          | No Supersampling Bilinear                    
 :----------------------------------:|:--------------------------------------:
 ![Task 5 No SS Nearest](./images/nossnear.png)    |  ![Task 5 No SS Bilinear](./images/nossbil.png)      
 
+These images are not supersampled, their only difference is that the left one uses nearest sampleing and the right uses bilinear. As is apparent, 
+the bilinear image does a much better job at modeling the curves within the smeared Berkeley logo. This is because the bilinear version 
+averages out the textures near the sample region rather than just selecting them as is the case in nearest. This means that bilinear sampling 
+has a similar effect to super sampling because it will smooth large changes in texture by proportionally blending the sample texture with 
+nearby points on the textmap.
+
+| x16 Supersampling Nearest          | x16 Supersampling Bilinear                    
+:----------------------------------:|:--------------------------------------:
+![Task 5 SS Nearest](./images/ssnear.png)    |  ![Task 5 No Bilinear](./images/ssbil.png)      
+
+These images are supersampled with a rate of 16. Although the bilinear image still does a better job at representing curves, as the supersampling 
+rate increases the difference in quality becomes less apparent. This is expected because bilinear sampling is a process similar to super sampling, 
+so when supersampling itself is enabled, the two processes begin to approach similar results. In general, one would expect to get the largest 
+bilinear sampling effects on a non-supersampled image.
 
