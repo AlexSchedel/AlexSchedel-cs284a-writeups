@@ -88,6 +88,17 @@ that the triangle is still not fully connected, indicating that this super sampl
 **Sampling Rate = 16** - Aliasing is further reduced and the triangle is now fully (albeit using light colors) connected. Because the 
 sampling rate is higher there is a range of 16 shades of red possible for each pixel, allowing more accuracy and precision in rendering.
 
+### Extra Credit
+
+As extra credit, I implemented a jitter based sampling algorithm. Here is a comparison of how it looks to the standard method.
+
+No Jitter                   |  Jitter                    
+:----------------------------------:|:--------------------------------------:
+![Task 2 EC No Jitter](./images/ECnojit.png)    |  ![Task 2 EC Jitter](./images/ECjit.png)      
+
+The triangles do look better in some sense from a distance, or at least the sides of them do. However this method on its own creates 
+issues when rendering straight lines. Perhaps an image with a number of oblique angles could benefit from this technique.
+
 ## Task 3 - Translations
 
 Translations are accomplished by using affine matrices to alter coordinates. Implementation of this part of the project was relativally 
