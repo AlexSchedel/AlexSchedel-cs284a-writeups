@@ -73,7 +73,34 @@ artificially “supersample” each point and line by placing `sample_rate` numb
 This means that when the color of a point or line is averaged with the other points, the average will always be equal to the original 
 color of a point or line.
 
-Example 1                           |  Example 2                             |  Example 2
+Sampling Rate = 1 (No Supersampling)|  Sampling Rate = 4                     | Sampling Rate = 16
 :----------------------------------:|:--------------------------------------:|:--------------------------------------:
-![Task 2 SR=1](./images/t21.png)  |  ![Task 2 SR=4](./images/t22.png)    |  ![Task 2 SR=16](./images/t23.png)
+![Task 2 SR=1](./images/t21.png)    |  ![Task 2 SR=4](./images/t22.png)      |  ![Task 2 SR=16](./images/t23.png)
+
+**Sampling Rate = 1 (No Supersampling)** - The first image has no antialiasing. Note that there are only two distinct colors present 
+on the inspector window, blue and white, with no gradations in between. Additionally, the triangle is not fully connected.
+
+**Sampling Rate = 4** - This image demonstrates basic supersampling. Because we are now sampling the same pixel in multiple locations 
+and averaging the color, there are more gradations available between white and red. Additionally, even if the center of a pixel is no 
+longer located in the triangle, if it has nearby elements which are, we are likely to see some coloring in the output. Note however 
+that the triangle is still not fully connected, indicating that this super sampling rate is still somewhat coarse.
+
+**Sampling Rate = 16** - Aliasing is further reduced and the triangle is now fully (albeit using light colors) connected. Because the 
+sampling rate is higher there is a range of 16 shades of red possible for each pixel, allowing more accuracy and precision in rendering.
+
+## Task 3 - Translations
+
+Translations are accomplished by using affine matrices to alter coordinates. Implementation of this part of the project was relativally 
+straightforward, and in effect is consists largely of creating matrices. As for the creative portion of this part of the project:
+
+![Task 3](./images.t31.PNG)
+
+I made the robot do the splits! To do this I had to add additional transforms to each of the four leg components of the robot. The first 
+involved rotating the legs 90 degrees. From there, the legs were properly rotated, but still in the same positions as before, so I had 
+to add additional translations and fiddle around with the numbers until I was able to get each component into the correct position. This 
+exercise helped to illustrate the order of transformations matters. In particular, I first tried adding the additional rotation at the 
+end of the starter code, only to find that it did not rotate the rectangle while maintaining its shape as I thought it would, but instead 
+turned it into a kind of kite shape. I learned that the rotations had to occur before the scaling in order for things to render the way I 
+wanted them to.
+
 
