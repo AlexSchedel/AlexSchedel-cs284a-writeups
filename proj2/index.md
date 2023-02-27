@@ -38,12 +38,11 @@ From there, I implemented `evaluateStep`. This involved iterating through the pr
 each pair, and then adding that new point to a list of points to be returned at the end of the function. Thanks to my previously defined helper functions, 
 this required only a simple for loop to implement.
 
-![Part 1](./images/t11.PNG)
-![Part 1](./images/t12.PNG)
-![Part 1](./images/t13.PNG)
-![Part 1](./images/t14.PNG)
-![Part 1](./images/t15.PNG)
-![Part 1](./images/t16.PNG)
+0 Iterations                  |  1 Iteration                    | 2 Iterations
+:----------------------------------:|:--------------------------------------:|:--------------------------------------:
+![Part 1](./images/t11.PNG)   |  ![Part 1](./images/t12.PNG)     | ![Part 1](./images/t13.PNG)
+3 Iterations    | 4 Iterations     | 5 Iterations
+![Part 1](./images/t14.PNG)   |  ![Part 1](./images/t15.PNG)     | ![Part 1](./images/t16.PNG)
 
 Here are the lerp points being calculated at each step when $t = 0.5$. The final image contains the final point on the curve highlighted in red as well as 
 the entire Bezier curve in green.
@@ -68,7 +67,7 @@ Notice that each curve is defined by a series of points unique to it.
 From here, we can then draw another curve through each of the curves and interpolate a Bezier curve as $t$ varies. How this might look for a single value 
 of $t$ can be visualized as such:
 
-![Part 2](./images/t22.PNG)
+![Part 2](./images/t22e.PNG)
 
 All $x, y, z$ points that intersect with this higher order Bezier curve are part of the implicit Bezier surface.
 
@@ -99,22 +98,25 @@ This process allowed me to iterate through all the adjacent faces and get access
 ### Results
 These normals can be used to create realistic shading on a given mesh. For example, here is the same mesh shaded with two different techniques:
 
-![Part 3](./images/t31.PNG)
-![Part 3](./images/t32.PNG)
+Triangle Shading                 |  Blinn-Phong Shading                 
+:----------------------------------:|:------------------------------------:
+![Part 3](./images/t31.PNG)   | ![Part 3](./images/t32.PNG)   
 
 Notice that in the left image with flat shading, each quad receives a single color, resulting in a very blocky texture. The right image however, which incorporates the area-weighted vertex normals to implement Blinn-Phong shading, is much more realistic.
 
 ## Part 4 - Edge Flip
-In this part I implemented edge flipping, perhaps the most tedious and cumbersome thing I have yet had the great displeasure of implementing in code. I began, as is suggested in the spec and on Ed, by writing out every single component on the old and new version of the quad. Here is my drawing in case you are curious:
+In this part I implemented edge flipping, perhaps the most tedious and cumbersome thing I have yet had the great displeasure of implementing in code. I began, as is suggested in the spec and on Ed, by writing out every single component on the old and new version of the quad. Here is are my drawings in case you are curious:
 
-![Part 4](./images/t41.PNG)
+![Part 4](./images/t41a.png)
+![Part 4](./images/t41b.png)
 
 From there I set about figuring how various elements would get transformed by this operation. The spec suggests writing out every single assignment, even redundant ones, but I had nowhere near enough patience to do the 50+ assignments out on paper, and even less patience to then enter them all in code, so I made some optimizations. I noticed that the `face`s and `next`s of each halfedge would never change, so I didn’t write any of them out. I also noticed that only the `vertex` of the two halfedges on `e0` would change. Finally, I noticed that the “outside” four edges’ `twin`s were the only things that changed. This dramatically reduced the amount of assignments I needed to make.
 
 Here is the teapot from earlier before and after a few edge flips:
 
-![Part 4](./images/t42.PNG)
-![Part 4](./images/t43.PNG)
+Before                 |  After                
+:----------------------------------:|:------------------------------------:
+![Part 4](./images/t42.PNG)   | ![Part 4](./images/t43.PNG)  
 
 I was fortunate in that the tedium in this section mostly involved writing out the calculations and debugging was pretty easy. I did have one bug however, and it came as a result of my drawing. What you might notice about the drawing is that it only includes two triangles. This means that it looks like the `next` of `h6` is `h7` and onward. I, not thinking, assumed this was the case which meant that my first implementation would destroy a few edges on the bottom of the quad. Luckily though I was able to spot this issue by just passing through the code again and double checking.
 
@@ -129,9 +131,9 @@ As before, I took advantage of the fact that many of the assignments were redund
 
 Here are some images of the teapot. First before any mesh alterations, then after some edge splits, then after a combination of edge splits and flips
 
-![Part 5](./images/t52.PNG)
-![Part 5](./images/t53.PNG)
-![Part 5](./images/t54.PNG)
+No Alterations                 |  Edge Splits                    | Edge Splits / Flips
+:----------------------------------:|:--------------------------------------:|:--------------------------------------:
+![Part 5](./images/t52.PNG)   | ![Part 5](./images/t53.PNG)     | ![Part 5](./images/t54.png)
 
 The only bug I encountered here was the position of the new `Vertex`. I initially averaged the coordinates of all four original vertices when finding the position of the new vertex. This became an issue for me when I started working on Part 6, as edge slips would alter the shape of the mesh in addition to splitting. I had to go back and fix the position to be the average of only `v0` and `v2`, the two vertices which the split edge originally spanned.
 
@@ -169,10 +171,11 @@ All this done, the final step was simply to update the coordinates of all the ve
 ### Results
 Here is the final result of the algorithm are various about of loop subdivision:
 
-![Part 6](./images/t61.PNG)
-![Part 6](./images/t62.PNG)
-![Part 6](./images/t63.PNG)
-![Part 6](./images/t67.PNG)
+0 Iterations                 |  1 Iterations                
+:----------------------------------:|:------------------------------------:
+![Part 6](./images/t61.PNG)   | ![Part 6](./images/t62.PNG)
+2 Iterations                 | 7 Iterations
+![Part 6](./images/t63.PNG)   | ![Part 6](./images/t67.PNG)
 
 Notice that the main feature of the algorithm is a smoothing out of rough edges. The torus more and more approaches the shape of a smoothed donut with successive iterations of the algorithm.
 
