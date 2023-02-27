@@ -123,7 +123,7 @@ I was fortunate in that the tedium in this section mostly involved writing out t
 ## Part 5 - Edge Split
 I used the same technique as the previous part to implement edge splitting. Here is my drawing of what the quad should look like after the split:
 
-![Part 5](./images/t51.PNG)
+![Part 5](./images/t51.png)
 
 This is different than the previous problem as you will notice there are a number of new mesh components. That noted, the implementation was no harder. I just copy pasted all the previous edges (as the initial state of the quad in Parts 4 and 5 is the same) and then created new `Edge`s, `Halfedges`, `Face`s, and `Vertex`s where needed. From there I went to work on the reassignments
 
@@ -177,22 +177,19 @@ Here is the final result of the algorithm are various about of loop subdivision:
 2 Iterations                 | 7 Iterations
 ![Part 6](./images/t63.PNG)   | ![Part 6](./images/t67.PNG)
 
-Notice that the main feature of the algorithm is a smoothing out of rough edges. The torus more and more approaches the shape of a smoothed donut with successive iterations of the algorithm.
+Notice that the main feature of the algorithm is a smoothing out of rough edges. The torus more and more approaches the shape of a smoothed donut with successive iterations of the algorithm. The cube does not quite divide symmetrically. This is because the initial cube mesh itself is not symmetrical.
 
-![Part 6](./images/t68.PNG)
 
-The cube does not quite divide symmetrically. This is because the initial cube mesh itself is not symmetrical. Take a look at aface of the default mesh:
-
-![Part 6](./images/t69.PNG)
+Original Mesh                 |  After Subdivision               
+:----------------------------------:|:------------------------------------:
+![Part 6](./images/t69.PNG)  | ![Part 6](./images/t68.PNG)
 
 It consists of two triangles that cut the face in half. The problem is that although the is symmetric in the sense that the same shape is used to subdivide the face, it is not in other ways. For instance, of the four corners in the face, only two of them intersect with the aforementioned triangles.
 
-We can preprocess the mesh to enable a more even split. Since the issue of asymmetry is present in the initial mesh, we can use edge splits to make it more symmetrical before loop subdivision like this:
+We can preprocess the mesh to enable a more even split. Since the issue of asymmetry is present in the initial mesh, we can use edge splits to make it more symmetrical before loop subdivision like the below image. Subdividing this mesh results in something much more symmetric.
 
-![Part 6](./images/t610.PNG)
-
-Subdividing this mesh results in something much more symmetric.
-
-![Part 6](./images/t611.PNG)
+Original Mesh                 |  After Subdivision               
+:----------------------------------:|:------------------------------------:
+![Part 6](./images/t610.PNG)  | ![Part 6](./images/t611.PNG)
 
 Write up link: https://alexschedel.github.io/AlexSchedel-cs284a-writeups/
