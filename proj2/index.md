@@ -1,269 +1,195 @@
 ---
-title: "Project 1: Rasterizer"
+title: "Project 2: MeshEdit"
 has_children: false
 nav_order: 1
 ---
 
-# Project 1: Rasterizer
+# Project 2: MeshEdit
 
 ## Project Overview
 
-In this project, I implemented and explored various rasterization and sampling schemes for rendering two dimensional images. 
-This encompasses very simple approaches, like basic nearest neighbor point sampling, to intermediate approaches such as supersampling, 
-all the way to more advanced techniques such as trilinear texture sampling. One of my basic goals with this project is to visually 
-demonstrate the differences in these approaches while also making note of the computational requirements of each technique. Additionally, 
-although these techniques are all used within the context of this project to render two dimensional images, they could easily be extended 
-or extrapolated to other tasks as well.
+In this project, I implemented a number of techniques for generating and working with meshes in 2D and 3D space. I began by implementing support 
+for Bezier curves and surfaces, which allow for a generalized way to describe implicit structures in 2 and 3 dimensional space. After that I worked 
+on implementing a shading mechanism for meshes as well as a number of operations to alter meshes. This ultimately led to Loop Subdivision, a 
+sophisticated algorithm for upscaling the complexity of meshes. 
 
-Additionally, as is the case with any academic project, great value is also yielded by the implementation of algorithms. Making note of 
-various formulae and sets of equations on paper is one thing, but actually implementing them often requires digging into and understanding 
-them at a much deeper level. 
-
-## Task 1 - Basic Triangle Rasterization
-
-To rasterize triangles, I made use of the 3 lines algorithm from the lecture slides. I first determine the coordinates of the bounding box 
-of the triangle, that being the smallest rectangle that will contain all points in the triangle. From there I iterate through the image, 
-sampling at every x + 0.5 and y + 0.5 coordinate, to make sure my sample comes from the middle of each box and that I sample every box that 
-is inside the triangle. I have a helper function which implements the point in triangle test from lecture. I run this three times, once for 
-each side of the triangle. If a given sample passes or fails all three tests, I draw it directly onto the screen. This results in a fully 
-rendered triangle.
-
-In terms of efficiency, this algorithm is linear with respect to the size of the bounding box of the triangle. Before I run any loops, I 
-first find the minimum and maximum x and y coordinates across all three points. This defines my bounding box. I then iterate over all the 
-samples in this box with a double for loop. Here is an illustration of the output, with the pixel selecter zoomed in on a triangle to
-demonstrate the sort of artifacts this process produces.
-
-![Task 1](./images/t11.png)
-
-## Task 2 - Supersampling
-
-### Additional Data Structures
-
-Unlike the previous task, my implementation of supersampling requires an additional data structure, that being a sample buffer. The 
-sampling buffer is a 1D array which stores sampled pixels before they are drawn on the screen, allowing me to perform additional 
-operations on the points before rendering. In supersampling in particular, this provides a temporary location to store svg pixels 
-sampled at a higher rate which are then down sampled to the appropriate resolution. As an additional implementation note, because this 
-array is 1D and needs to store 3D data (x and y corresponding to 2D location of each sample and the third dimension “s” corresponding 
-to the number of the supersample within the x, y pixel) a clever indexing scheme is required to organize all the data. I settled on an 
-indexing scheme of:
-`sample_buffer[((y * width + x) * sample_rate) + s]`
-Although this is not explicitly “row major order” it does organize everything in such a way so that all supersampled pixels can be 
-neatly stored in the sample buffer.
+## Part 1 - Bezier Curves with 1D de Casteljau Subdivision
 
 ### Algorithm
+This task involves defining a Bezier curve with de Casteljau’s algorithm. At a high level, this algorithm recursively calculates midpoints from given 
+points in 2D space through a series of lerps until a final midpoint is reached, which can be used with one last lerp to draw a point on the actual curve.
 
-My supersampling algorithm is an extension of the previously described Task 1 algorithm. I make use of the three line test to determine 
-whether or not a point is within the triangle as before, the main additions to the algorithm are which points are sampled and how they 
-are processed once sampled.
+In more detail, suppose we begin with $N$ points $p_0$ to $p_N$. From this we wish to determine our Bezier curve. To do this we pair up adjacent points 
+(i.e. $p_0$ and $p_1$, $p_1$ and $p_2$, etc. all the way up to $p_{N - 1}$ and $p_N$) and take a lerp with parameter $t$ to get a midpoint for each pair. 
+This will yield $N - 1$ points on the first iteration of the algorithm. From there we proceed recursively, using each set of lerped points to generate 
+another set of points with one fewer element each time. When we have only one point remaining, that point will be on our final curve. We lerp across 
+several values of $t$ to draw our whole curve.
 
-The Task 1 algorithm made use of a double for loop to iterate through all the sample points. This algorithm makes use of a quadruple 
-for loop or, perhaps more accurately, two double for loops. The first still iterates through all the potential x, y samples, while the
-second is responsible for iterating through all the supersample points i, j within each x, y coordinate. The coordinates of these points are 
-determined by repeatedly offsetting each x, y coordinate by multiples of `1 / sqrt(sample_rate)` until the next x, y coordinate would be 
-reached. Each of these points then undergoes the three line test and is placed in the sample buffer with appropriate color. This has 
-the net effect of antialiasing the triangles, by blending their original colors with an amount of the background color proportional to 
-how many super sample points are inside or outside of the triangle.
+Here is a visual demonstration of the algorithm being traced as $t$ ranges from 0 to 1.
 
-Once in the sample buffer, the points require further processing. My algorithm works by summing the RGB values of all super sample 
-points for a given x, y coordinate and then dividing by the total number of samples in order to average out the color. This has the 
-effect of down sampling from a higher resolution to a lower one. One final note is that points and lines need to be handled specially, 
-otherwise they would just appear to get lighter and later as the sampling rate increases due to not being super sampled and therefore 
-having their colors incorrectly averaged with default background color pixels. To account for this, I simply changed `fill_pixel` to 
-artificially “supersample” each point and line by placing `sample_rate` number of pixels of the sample color in the sample buffer. 
-This means that when the color of a point or line is averaged with the other points, the average will always be equal to the original 
-color of a point or line.
+![Part 1](./images/BezierCurve.gif)
 
-Sampling Rate = 1                   |  Sampling Rate = 4                     | Sampling Rate = 16
-:----------------------------------:|:--------------------------------------:|:--------------------------------------:
-![Task 2 SR=1](./images/t21.png)    |  ![Task 2 SR=4](./images/t22.png)      |  ![Task 2 SR=16](./images/t23.png)
+### Implementation
+My implementation of this algorithm was made simple by use of a few helper functions. To begin, I implemented a basic `lerp` function, which served to 
+interpolate two floats, `a` and `b`, across a parameter `t`. I then utilized that helper to implement another helper function, `lerpPoints`, which would 
+take two `Vector2D`s (each representing a particular $x, y$ coordinate) and return an interpolated `Vector2D`.
 
-**Sampling Rate = 1 (No Supersampling)** - The first image has no antialiasing. Note that there are only two distinct colors present 
-on the inspector window, blue and white, with no gradations in between. Additionally, the triangle is not fully connected.
+From there, I implemented `evaluateStep`. This involved iterating through the provided list of points, pairing them up, interpolating a new point from 
+each pair, and then adding that new point to a list of points to be returned at the end of the function. Thanks to my previously defined helper functions, 
+this required only a simple for loop to implement.
 
-**Sampling Rate = 4** - This image demonstrates basic supersampling. Because we are now sampling the same pixel in multiple locations 
-and averaging the color, there are more gradations available between white and red. Additionally, even if the center of a pixel is no 
-longer located in the triangle, if it has nearby elements which are, we are likely to see some coloring in the output. Note however 
-that the triangle is still not fully connected, indicating that this super sampling rate is still somewhat coarse.
+![Part 1](./images/t11.PNG)
+![Part 1](./images/t12.PNG)
+![Part 1](./images/t13.PNG)
+![Part 1](./images/t14.PNG)
+![Part 1](./images/t15.PNG)
+![Part 1](./images/t16.PNG)
 
-**Sampling Rate = 16** - Aliasing is further reduced and the triangle is now fully (albeit using light colors) connected. Because the 
-sampling rate is higher there is a range of 16 shades of red possible for each pixel, allowing more accuracy and precision in rendering.
+Here are the lerp points being calculated at each step when $t = 0.5$. The final image contains the final point on the curve highlighted in red as well as 
+the entire Bezier curve in green.
 
-### Extra Credit
+![Part 1](./images/t17.PNG)
 
-As extra credit, I implemented a jitter based sampling algorithm. Here is a comparison of how it looks to the standard method.
+Here is the same set of points, but this time showing the final point when $t$ is a larger value.
 
-No Jitter                   |  Jitter                    
-:----------------------------------:|:--------------------------------------:
-![Task 2 EC No Jitter](./images/ECnojit.png)    |  ![Task 2 EC Jitter](./images/ECjit.png)      
-
-The triangles do look better in some sense from a distance, or at least the sides of them do. However this method on its own creates 
-issues when rendering straight lines. Perhaps an image with a number of oblique angles could benefit from this technique.
-
-## Task 3 - Translations
-
-Translations are accomplished by using affine matrices to alter coordinates. Implementation of this part of the project was relativally 
-straightforward, and in effect is consists largely of creating matrices. As for the creative portion of this part of the project:
-
-![Task 3](./images/t31.png)
-
-I made the robot do the splits! To do this I had to add additional transforms to each of the four leg components of the robot. The first 
-involved rotating the legs 90 degrees. From there, the legs were properly rotated, but still in the same positions as before, so I had 
-to add additional translations and fiddle around with the numbers until I was able to get each component into the correct position. This 
-exercise helped to illustrate the order of transformations matters. In particular, I first tried adding the additional rotation at the 
-end of the starter code, only to find that it did not rotate the rectangle while maintaining its shape as I thought it would, but instead 
-turned it into a kind of kite shape. I learned that the rotations had to occur before the scaling in order for things to render the way I 
-wanted them to.
-
-## Task 4 - Barycentric Coordinates
-
-Barycentric coordinates allow for smooth interpolation of a texture across a rendered object. They work by characterizing a coordinate as 
-a linear combination of three attributes, scaled by values alpha, beta, and gamma. Once alpha, beta, and gamma have been determined by 
-solving a series of linear equations, they can be used to scale other coordinates, in this case texture coordinates, appropriately.
-
-![Task 4 Triangle](./images/t41.png)
-
-Here is an image showing a smoothly interpolated triangle. Notice that each color point is the result of a “blend” of the surrounding 
-colors, or, to be more specific, each point inside the triangle represents a blend of color proportional to its distance from each corner 
-of the triangle.
-
-![Task 4 Color Wheel](./images/t42.png)
-
-This image demonstrates the same effect as above but on a color wheel.
-
-## Task 5 - Pixel Sampling
-
-Much like going from Task 1 to Task 2, Task 5 is an extension of the work done in Task 4. In Task 4, we were given three colors and by 
-calculating Barycentric values of alpha, beta, and gamma, were able to blend and proportion those colors appropriately. Similarly for Task 
-5, we start, as before, by calculating alpha, beta, and gamma values. However, instead of directly using those values to average the colors, 
-we instead use them to construct two new points, `u` and `v`. `u` and `v `are the result of taking a linear combination to the three pairs 
-of given u, v texture ratios with Barycentric coordinates. From there, these two values are then used to return a texture mapping through either 
-nearest sampling or bilinear sampling.
-
-### Nearest Sampling 
-
-This approach works by taking `u` and `v`, scaling them up to the width and height of the texture (because they initially start as ratios 
-between 0 and 1), rounding that value to the nearest whole number, and finally sampling a texel from the mipmap at level 0. This method is 
-simple and cheap to compute.
-
-### Bilinear Sampling 
-
-This approach is more complicated. I employed the triple lerp method from the lecture slides. I began by scaling my values of `u` and `v` 
-and then flooring and ceiling them to create four pairs of coordinates representing the square created by finding the four nearest whole 
-value pixel points on the texture. This resulted in eight different variables (2 for each point) with some redundant information, but I left 
-the code this way intentionally so as to provide a clearer picture of the process. From there I took a lerp along the x axis of the horizontal 
-pairs of points, and with that information further took a lerp along the y axis, using the previously lerped coordinates. This allowed me to 
-effectively supersample the texture by averaging out the value of the four nearest points and returning the texel at that point. While more 
-accurate, this method is somewhat more expensive than nearest sampling due to the additional math required to find the exact sample location.
-
-| No Supersampling Nearest          | No Supersampling Bilinear                    
-:----------------------------------:|:--------------------------------------:
-![Task 5 No SS Nearest](./images/nossnear.png)    |  ![Task 5 No SS Bilinear](./images/nossbil.png)      
-
-These images are not supersampled, their only difference is that the left one uses nearest sampleing and the right uses bilinear. As is apparent, 
-the bilinear image does a much better job at modeling the curves within the smeared Berkeley logo. This is because the bilinear version 
-averages out the textures near the sample region rather than just selecting them as is the case in nearest. This means that bilinear sampling 
-has a similar effect to super sampling because it will smooth large changes in texture by proportionally blending the sample texture with 
-nearby points on the textmap.
-
-| x16 Supersampling Nearest          | x16 Supersampling Bilinear                    
-:----------------------------------:|:--------------------------------------:
-![Task 5 SS Nearest](./images/ssnear.png)    |  ![Task 5 No Bilinear](./images/ssbil.png)      
-
-These images are supersampled with a rate of 16. Although the bilinear image still does a better job at representing curves, as the supersampling 
-rate increases the difference in quality becomes less apparent. This is expected because bilinear sampling is a process similar to super sampling, 
-so when supersampling itself is enabled, the two processes begin to approach similar results. In general, one would expect to get the largest 
-bilinear sampling effects on a non-supersampled image.
-
-## Task 6 - Level Sampling
+## Part 2 - Bezier Surfaces with Separable 1D de Casteljau
 
 ### Algorithm
+The algorithm in Part 1 can draw only a single curve in 2D space, but de Casteljau’s algorithm can be extended to draw Bezier surfaces in 3D dimensions as 
+well. The extended algorithm starts where the previous left off. Assume that we can draw Bezier curves as described in Part 1. We do not need to limit 
+ourselves to a single curve. Suppose we draw multiple curves. These curves are two dimensional, so their $z$ coordinates will be parallel. We can take 
+advantage of this and stack the curves next to each other by drawing ones whose coordinates are offset on this parallel. Doing this, we would end up with 
+something like the below picture.
 
-Level sampling works by texturing an image based on a mipmap at a level determined according to the size of the rendered image. The first step is 
-to determine at what level the mipmap should be sampled at. The starter code provides three pairs of u, v ratios which correspond to where in the 
-sample texture the x, y coordinates of the triangle will map. We can use these coordinates to determine the relative area of the sample, thus 
-allowing us to determine the appropriate sample level. To do this we first transform all three pairs of coordinates to their Barycentric 
-representations to make sure they properly represent the ratios of the x, y coordinates that we want. These coordinates, along with additional 
-information about which sample techniques we will be using to render a given image, are combined into a `SampleParams` struct which is then passed 
-into the texture object.
+![Part 2](./images/t21.PNG)
 
-All that information properly in place, we can actually calculate the level as a float. There are three settings:
+Notice that each curve is defined by a series of points unique to it.
 
-**L_ZERO** - we default to always using level 0 of the mipmap
+From here, we can then draw another curve through each of the curves and interpolate a Bezier curve as $t$ varies. How this might look for a single value 
+of $t$ can be visualized as such:
 
-**L_NEAREST** - we transform the two additional sets of u, v Barycentric coordinates to pixel values and use them to calculate the size of the 
-texture region which we are sampling as the difference in minimum and maximum x and y coordinates of the area. From there we calculate the mipmap 
-level as `level = log2(max(diff_dx.norm(), diff_dy.norm()));` and round to the nearest integer.
+![Part 2](./images/t22.PNG)
 
-**L_LINEAR** - the process here is the same as in `L_NEAREST`, the difference being that we leave the level unrounded.
+All $x, y, z$ points that intersect with this higher order Bezier curve are part of the implicit Bezier surface.
 
-The hard work of determining the appropriate mipmap level out of the way, we can now sample according to one of two techniques:
+### Implementation
 
-**P_NEAREST** - in this case we simply sample the mipmap as described in Task 5, the only difference being that we use the level we have calculated 
-above. In the case that we determined the level linearly, we will default to using the floor of the level value.
+Unlike in Part 1, I implemented the recursive step for this algorithm instead of just a single step. Once again, due to careful use of helper methods, 
+the implementation process was easily discretizable.
 
-**P_LINEAR** - in the case where we have a continuous level variable from the final level determination method), this option will in effect perform 
-trilinear sampling as described in lecture. This means that we will floor and ceiling the level, giving us two different mipmap levels, sample from 
-each, and then lerp the two resulting texture colors proportionally to the significance of the level value. In the case where level is a whole number 
-(meaning the two first level determination methods), this case will behave the same way as `P_NEAREST` because the floor and ceiling of the level will 
-be the same and therefore we will linearly interpolate between the same two values, yielding no change.
+The first step in implementation is drawing a single Bezier curve in 3D space. To accomplish this, I generalized my Part 1 code to work in three dimensions. The only real change is that I created a variant of my `lerpPoints` function as described above that would lerp three coordinates together instead of two. The `lerp` and `evaluateStep` functions contain only superficial differences from their Part 1 counterparts (i.e. changing a float to a double and declaring a vector of `Vector3D` rather than `Vector2D`s).
 
-The below table illustrates some of the differences and trade offs of the various techniques explored throughout the project.
+The functions described above only do one step of the algorithm however, so I implemented `evaluate1D`, a recursive function that would calculate the points on a single Bezier curve. The function recursively calculates the result of `evaluateStep` until there is only one point returned by the function (recall that the algorithm will always return one fewer point than it takes in, so this always terminates in linear time). 
 
-|     | Pixel Sampling             | Level Sampling                |   Supersampling    |
-| ----------- | ----------- | ----------- | ----------- |
-|Speed |Fastest method | Middle, if averaging across multiple mipmap levels can slow down further| Slowest method (when sampling rates are high) because in effect samples at a higher resolution and then down samples that image|
-|Memory Usage|Minimal, all textures are directly rendered|Requires more memory as mipmap representation of texture is larger|Requires more memory the higher the sample rate, but in general use cases will be less memory intensive than level sampling and more so than pixel sampling|
-|Antialiasing|Creates artifacts, fails to “blend” high frequency signals, pixelates high res images|Reduces aliasing by using more resolution appropriate images given a level. Can further reduce aliasing by blending textures of adjacent levels (trilinear sampling) which helps dramatically when zooming|Reduces artifacts by “blending” them with nearby textures. Smooths colors to make images appear much less jagged|
+The final step was the `evaluate` function, which provides parameters `u` and `v`. These parameters represent how far along the curves in the $x$ and $y$ dimensions the values we want to calculate are. To generate the final higher order Bezier curve, I first used the provided control points to generate a number of Bezier curves in accordance with the `u` parameter and the `evaluate1D` function. I placed all these curves into a vector of their own and then used that vector again with the `evaluate1D` function, this time creating only one curve with the argument $v$.
 
-### An Example in Action
+### Results
+This allows us to generate rounded surfaces in 3D space. Here is an example of this process being used to generate a teapot.
 
-As a final demonstration, I present some of my own images sampled according to the techniques described above. Here is a picture of me at Machu Picchu 
-from this past Winter break. This is the original image at a high resolution (or at least as high as my phone can take it) without any sampling 
-techniques and no distortions with the other above methods.
+![Part 2](./images/t23.PNG)
 
-![Task 6 Me](./images/me.png)
+## Part 3 - Area-Weighted Vertex Normals
+The next part of the project switches gears from Bezier curves to working with Halfedges and mesh manipulation. The first thing we will implement is the ability to calculate area-weighted vertex normals.
 
-The following three images all use `P_NEAREST` with varied level sampling methods.
+### Algorithm
+For this process we are given a vertex, and from that we want to find every face adjacent to that vertex, sum all the normals of those faces, and finally normalize the whole sum. In the provided code base, the `Halfedge` datastructure is responsible for linking `Vertex`s, `Face`s, and other `Halfedge`s together, so I immediately accessed the starting `Vertex`’s corresponding `HalfedgeCIter`. From there, I was able to get at one of the `Face`s we wanted. To get to the next face and all others thereafter, I went to the `twin()->next` of the current `Halfedge` until I reached the original starting `Halfedge`.
 
-![Task 6 Me](./images/0.png)
+This process allowed me to iterate through all the adjacent faces and get access to their normals, which I then normalized into one vector at the end.
 
-This image is created with zero level sampling. Notice that there are a lot of artifacts here. Parts of the image almost look like pure noise. This 
-is because the original image is a high resolution and is being down sampled. Whatever pixel is closest in the map gets rendered here, that means 
-that if the colors of the image change quickly over a short range, they are unlikely to be well sampled, resulting in the extreme aliasing seen 
-here. These issues are especially apparent in the pixel inspector, centered on my neck. The greenery around me is very noisy.
+### Results
+These normals can be used to create realistic shading on a given mesh. For example, here is the same mesh shaded with two different techniques:
 
-![Task 6 Me](./images/nearest.png)
+![Part 3](./images/t31.PNG)
+![Part 3](./images/t32.PNG)
 
-This image uses nearest sampling, meaning that all textures are taken from the most appropriate mipmap level of the image. This creates a smoothed 
-effect. The full image appears somewhat blurry, but is overall more human parsable than the first. In the pixel inspector we can further see this. 
-Instead of noise like particles in the greenery, there seem to be patches of relatively uniform color. This approach actually does create some 
-additional artifacts as well. Notice that above Hyuna Picchu (the large mountain in the center) there are strange out of place pixels. Additionally, 
-many of the clouds have a somewhat pixelated look.
+Notice that in the left image with flat shading, each quad receives a single color, resulting in a very blocky texture. The right image however, which incorporates the area-weighted vertex normals to implement Blinn-Phong shading, is much more realistic.
 
-![Task 6 Me](./images/linear.png)
+## Part 4 - Edge Flip
+In this part I implemented edge flipping, perhaps the most tedious and cumbersome thing I have yet had the great displeasure of implementing in code. I began, as is suggested in the spec and on Ed, by writing out every single component on the old and new version of the quad. Here is my drawing in case you are curious:
 
-This image uses linear sampling, meaning that it is sampling multiple mipmap levels. This produces far 
-and away the best results. In the pixel inspect we see a happy medium between the first two renders. The texture is somewhat smoothed as in the 
-second render, while retaining some of the randomness we would expect in the greenery which we had too much of in the first render. That noted, 
-there are still some issues in that the final image does lack some blending.
+![Part 4](./images/t41.PNG)
 
-The following images pairs are organized as follows: Those on the left are the same as the three just discussed above, those on the right are 
-those images with the same level setting, but this time with different pixel sampling levels.
+From there I set about figuring how various elements would get transformed by this operation. The spec suggests writing out every single assignment, even redundant ones, but I had nowhere near enough patience to do the 50+ assignments out on paper, and even less patience to then enter them all in code, so I made some optimizations. I noticed that the `face`s and `next`s of each halfedge would never change, so I didn’t write any of them out. I also noticed that only the `vertex` of the two halfedges on `e0` would change. Finally, I noticed that the “outside” four edges’ `twin`s were the only things that changed. This dramatically reduced the amount of assignments I needed to make.
 
-Level 0 `P_NEAREST`            | Level 0 `P_LINEAR`
-:-------------------------:|:-------------------------:
-|![Task 6 Me](./images/0.png)|![Task 6 Me](./images/zeroP.png)|
+Here is the teapot from earlier before and after a few edge flips:
 
-Level Nearest `P_NEAREST`            | Level Nearest `P_LINEAR`
-:-------------------------:|:-------------------------:
-|![Task 6 Me](./images/nearest.png)|![Task 6 Me](./images/nearestP.png)|
+![Part 4](./images/t42.PNG)
+![Part 4](./images/t43.PNG)
 
-Level Linear `P_NEAREST`            | Level Linear `P_LINEAR`
-:-------------------------:|:-------------------------:
-|![Task 6 Me](./images/linear.png)|![Task 6 Me](./images/linearP.png)|
+I was fortunate in that the tedium in this section mostly involved writing out the calculations and debugging was pretty easy. I did have one bug however, and it came as a result of my drawing. What you might notice about the drawing is that it only includes two triangles. This means that it looks like the `next` of `h6` is `h7` and onward. I, not thinking, assumed this was the case which meant that my first implementation would destroy a few edges on the bottom of the quad. Luckily though I was able to spot this issue by just passing through the code again and double checking.
 
-There are not too many insights to be gathered from this comparison, as it is quite difficult to tell the images apart in the first place. 
-The biggest difference I would like to note is that the images on the right are generally blended slightly better than those on the left, 
-meaning that large jumps in differing textures get smoothed over.
+## Part 5 - Edge Split
+I used the same technique as the previous part to implement edge splitting. Here is my drawing of what the quad should look like after the split:
+
+![Part 5](./images/t51.PNG)
+
+This is different than the previous problem as you will notice there are a number of new mesh components. That noted, the implementation was no harder. I just copy pasted all the previous edges (as the initial state of the quad in Parts 4 and 5 is the same) and then created new `Edge`s, `Halfedges`, `Face`s, and `Vertex`s where needed. From there I went to work on the reassignments
+
+As before, I took advantage of the fact that many of the assignments were redundant to cut down on work. However, it was a bit trickier in this one, as the bottom and top of the quad work slightly differently. I chose to “squish” the old non-split `Halfedge`s, `Edges`, and `Face`s into the top half of the quad. This allowed me to reassign many existing components, but for the bottom I had to make many new ones from scratch. Some key observations in terms of cutting down the number of assignments included: you never need to reassign an `Edge` in the old `Halfedge`s, as long as a `Halfedge` is not originating from the new vertex, you do not need to reassign it’s `Vertex`, `h5` through `h9` do not change at all, existing `Edge`s do not need to be reassigned at all. Then I had to set the variables for all the new components. This was more tedious as, since the components were all new, they all had to be initialized. 
+
+Here are some images of the teapot. First before any mesh alterations, then after some edge splits, then after a combination of edge splits and flips
+
+![Part 5](./images/t52.PNG)
+![Part 5](./images/t53.PNG)
+![Part 5](./images/t54.PNG)
+
+The only bug I encountered here was the position of the new `Vertex`. I initially averaged the coordinates of all four original vertices when finding the position of the new vertex. This became an issue for me when I started working on Part 6, as edge slips would alter the shape of the mesh in addition to splitting. I had to go back and fix the position to be the average of only `v0` and `v2`, the two vertices which the split edge originally spanned.
+
+## Part 6 - Loop Subdivision for Mesh Upsampling
+
+### Algorithm
+Loop Subdivision is an algorithm for increasing the resolution of a mesh iteratively. The first step of the process works by subdividing the triangles of a mesh into smaller subtriangles with updated vertex coordinates, allowing for this higher resolution. This is accomplished by first executing an edge split on every edge in the mesh. This leaves us with a higher resolution mesh, but the individual split triangles will not be a good representation of the structure of the old mesh. To fix this we flip all edges that were not part of the original edge that got split (i.e. the bottom half of a split edge) and connect a new vertex to an old vertex. That satisfies the subdivision of the mesh itself, but we also need to reposition both the old and new vertices as well. To do this we take a weighted sum of the positions of all the old vertices.
+
+### Implementation
+The implementation of this algorithm is somewhat complex and involves a number of substeps, each of which I have outlined below. I will explain the reasoning for each step as well as any interesting changes I had to make to the skeleton or previous methods to get the whole thing working together.
+
+#### Computing new positions of old vertices
+The first two steps of my algorithm involve calculating the updated positions of the vertices after loop subdivision. The eagle eyed amongst you may notice that this is the last step in my algorithm section, but it is the first step in my implementation. That is because it is greatly beneficial to precompute these values for later. It means that we can work on a simpler mesh since it has not yet been subdivided. Additionally we need to store this value anyways because, since the new positions are based off of the old positions, we would run into issues if we started changing positions before the whole of the computation was done.
+
+To find the new positions of the old vertices, I began by iterating over all the vertices. Since this step happens before the edge splits, iterating over all vertices is equivalent to iterating over only the old vertices. Using a do while loop that I ripped basically straight from the `Halfedge` documentation, I iterated through adjacent vertices and computed a weighted value for the new position by the scheme denoted in the spec. Since we do not want to change the actual positions of the vertices until all the precomputation has concluded, I stored these values in the `newPosition` field of each `Vertex`. Finally, I set all the `Vertex->isNew` fields to false, since they may have been true from a previous run of the algorithm. 
+
+#### Computing new positions of new vertices
+I then precompute the positions of all the new vertices (which do not yet exist). This is done by iterating through all edges and navigating the `Halfedge` datastructure to gather the nearest four `Vertex`s to where the new `Vertex` will be, and using their positions to create a weighted sum. Since these vertices do not yet exist, I store this position inside of the edges which will eventually connect to them.
+
+#### Splitting all edges in the mesh
+All the work of precomputation done, we can then actually start making changes to the mesh. I iterate through all the edges in the mesh and split the old ones. Although there are no new edges at the start of the algorithm, as we split we will get more and more new edges, so it is necessary to specify that splits can only happen on old edges.
+
+I implemented this with the help of the `splitEdge` method I implemented earlier, but it did require a small change in order to work with my algorithm. When edges are created, as of course occurs in `edgeSplit`, they are created via the `newEdge` method. This method, inexplicably, does not actually set the `isNew` field of the new edge to true, and thus it fell on me to manually set it myself for all the newly created edges. With this change made, `splitEdge` can be used to split edges, and returns the new `Vertex` created by every split. Every time a new `Vertex` is made, I put the precalculated `newPosition`, currently stored in the edge we are splitting, into it.
+
+#### Flipping select edges in the mesh
+I then go through and flip all the edges which are not properly orientated. This turned out to be a somewhat difficult problem, as despite what the spec says, you do not actually want to flip every new edge that touches a new and an old vertex. There is a class of edges that should be ignored and never flipped, those being new edges which are the bottom component of a previously split edge. These edges were technically already in the mesh, but due to the edge split have been broken off from the previous edge.
+
+I was having a number of issues flipping the correct edges until I realized there was this additional constraint, but then the issue fell on me to figure out how to actually characterize an edge as a “bottom component”. I ended up editing both `splitEdge` and the class definition of `Edge` itself. I am sure this is probably not what we are meant to do, but I added an extra boolean in the Edge class called `isBottomSplit`, then in `edgeSplit`, I set this field to true for the appropriate edge. This allowed me to figure out which edges were new, as it left the `isNew` boolean unaltered, while also giving me a way to identify bottom components later so I could skip them when flipping.
+
+Those changes made, I was able to iterate through every edge and flip only the appropriate ones.
+
+#### Setting new vertex coordinates
+All this done, the final step was simply to update the coordinates of all the vertices, which were stored in their `newPosition` fields.
+
+### Results
+Here is the final result of the algorithm are various about of loop subdivision:
+
+![Part 6](./images/t61.PNG)
+![Part 6](./images/t62.PNG)
+![Part 6](./images/t63.PNG)
+![Part 6](./images/t67.PNG)
+
+Notice that the main feature of the algorithm is a smoothing out of rough edges. The torus more and more approaches the shape of a smoothed donut with successive iterations of the algorithm.
+
+![Part 6](./images/t68.PNG)
+
+The cube does not quite divide symmetrically. This is because the initial cube mesh itself is not symmetrical. Take a look at aface of the default mesh:
+
+![Part 6](./images/t69.PNG)
+
+It consists of two triangles that cut the face in half. The problem is that although the is symmetric in the sense that the same shape is used to subdivide the face, it is not in other ways. For instance, of the four corners in the face, only two of them intersect with the aforementioned triangles.
+
+We can preprocess the mesh to enable a more even split. Since the issue of asymmetry is present in the initial mesh, we can use edge splits to make it more symmetrical before loop subdivision like this:
+
+![Part 6](./images/t610.PNG)
+
+Subdividing this mesh results in something much more symmetric.
+
+![Part 6](./images/t611.PNG)
 
 Write up link: https://alexschedel.github.io/AlexSchedel-cs284a-writeups/
