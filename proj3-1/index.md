@@ -6,13 +6,17 @@ nav_order: 1
 
 # Project 3: Pathtracer 1
 
+## Overview
+
+In this project, I implemented various ray tracing algorithms, as well as the datastructures needed to make that algorithm fast and computationally viable. I began at a low level by implementing rays themselves, as well as a number of primative techniques for detecting intersections with various types of surfaces. Then I implemented a BVH datastructure, to give me a fast way telling wether or not a given ray intersected with a shape. From there I had the tools neccessary to start implementing various ray tracing algorithms, including, zero, single, and multibounce illumination, as well as light and hemisphere sampled lighting. In the final part of the project, I implemented adaptive sampling in order to further optimizing my ray tracing algorithms.
+
 ## Part 1: Ray Generation and Scene Intersection
 
 ### Ray Generation
 
 Generating a ray consists of taking an `x` and `y` coordinate in world space, transforming them to camera space, and then instantiating the ray variables.
   
-To accomplish this, I first wrote a helper method `transformToCameraSpace` which takes the `x` and `y` and does the transformation. This works by scaling the `x` and `y`, which are initially given as ratios between 0 and 1, to the corresponding size of the camera as indicated in the spec. I then construct a `Vector3D` with those two numbers, as well as a 	`z` which is always set to -1, as that is how far the camera always is from the world `z`.
+To accomplish this, I first wrote a helper method `transformToCameraSpace` which takes the `x` and `y` and does the transformation. This works by scaling the `x` and `y`, which are initially given as ratios between 0 and 1, to the corresponding size of the camera as indicated in the spec. I then construct a `Vector3D` with those two numbers, as well as a `z` which is always set to -1, as that is how far the camera always is from the world `z`.
 
 After making this transformation, I normalize the vector and create a ray with the `o` set to the provided position, the `d` set to the newly transformed coordinates, and `min_t` and `max_t` set to the front and back clipping planes.
 
@@ -28,7 +32,7 @@ After finding these values with the algorithm, I used the barycentric coordinate
 
 ### Results
 
-After implementing these parts of the project I was able to render a few small images:
+After implementing these parts of the project I was able to render a few small images with normal shading:
 
 CBspheres.dae           |  beetle.dae                 
 :---------------------:|:-------------------------:
@@ -55,14 +59,14 @@ CBlucy.dae           |  CBBunny.dae
 :---------------------:|:-------------------------:
 ![Part 2](./images/t21.png) | ![Part 2](./images/t22.png)
 
-	For the sake of comparison, I tried rendering the CBbunny.dae mesh with and without BVH acceleration. Here are the results:
+For the sake of comparison, I tried rendering the CBbunny.dae mesh with and without BVH acceleration. Here are the results:
 
 . |  With BVH Acceleration | Without BVH Acceleration      
 :---------------------:|:-------------------------:|:-------:
 Time to Render (sec)| 0.0361 | 71.9470
 Avg Interection tests per Ray| 1.819 | 6210.749
 
-As you can see, the timing is almost incomparable given how large the gaps are. The speed up is roughly x24,000. This speed up largely comes from the fact that far fewer intersection tests must be computer per ray, as can be seen in the second row of the above table.
+As you can see, the timing is almost incomparable given how large the gaps are. The speed up is roughly x24,000. This speed up largely comes from the fact that far fewer intersection tests must be computer per ray, as can be seen in the second row of the above table. There is some overhead associated with the building of the BVH in the first place, but, as is demonstrated by the chart above, that is clearly negligible in comparison to the vast amount of the time the datastructure saves.
 
 ## Part 3: Direct Illumination
 
@@ -112,7 +116,7 @@ Assuming that we do not terminate, we then generate a ray, just as in the previo
 
 We can now compare different lighting techniques.
 
-Here are some images generated with global illumination
+Here are some images generated with global illumination:
 
 Spheres          |  Bunny                 
 :---------------------:|:-------------------------:
@@ -162,7 +166,7 @@ Final Image | Sample Rate
 ### A Final Note
 
 This project took a huge amound of rendering power, and so I primarily employed the Hive for the images you see here. I found myself openning several ssh's in order to monopolize as much processing power as I could to get all these images done quickly. For your amusement, here is an image of what it looked like while I was rendering these images:
-![Part 5](./images/aaaaCapture.png)
+![Part 5](./images/aaaaCapture.PNG)
 
 ## Project Overview
 Write up link: https://alexschedel.github.io/AlexSchedel-cs284a-writeups/
