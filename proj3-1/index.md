@@ -159,6 +159,10 @@ Final Image | Sample Rate
 ![Part 5](./images/t51.png) | ![Part 5](./images/t51_rate.png)
 ![Part 5](./images/t52.png) | ![Part 5](./images/t52_rate.png)
 
+### A Final Note
+
+This project took a huge amound of rendering power, and so I primarily employed the Hive for the images you see here. I found myself openning several ssh's in order to monopolize as much processing power as I could to get all these images done quickly. For your amusement, here is an image of what it looked like while I was rendering these images:
+![Part 5](./images/aaaaCapture.png)
 
 ## Project Overview
 Write up link: https://alexschedel.github.io/AlexSchedel-cs284a-writeups/
