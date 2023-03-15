@@ -132,7 +132,7 @@ Here is a series of high quality renderings of `CBbunny.dae` with increasing lev
 
 m = 0 | m = 1              
 :---------------------:|:-------------------------:
-![Part 4](./images/t45.png) | ![Part 4](./images/t46.png)
+![Part 4](./images/t46.png) | ![Part 4](./images/t45.png)
 m = 2 | m = 3  
 ![Part 4](./images/t47.png) | ![Part 4](./images/t48.png)
 
