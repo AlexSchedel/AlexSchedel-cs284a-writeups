@@ -1,5 +1,5 @@
 ---
-title: "Project 3-1: Ray Pathtracer 2"
+title: "Project 3-2: Ray Pathtracer 2"
 has_children: false
 nav_order: 1
 ---
@@ -27,6 +27,7 @@ m = 0           |  m = 1
 ## Depth of Field (Part 4)
 
 ### Implementation
+![Part 4](./images/t21.jpg)
 
 ### Results
 
