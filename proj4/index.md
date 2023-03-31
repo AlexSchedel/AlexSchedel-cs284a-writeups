@@ -72,7 +72,7 @@ To start, we can try using different values of `ks`, which represents the spring
 :------------:|:--------------:|:---------------------:
 ![Part 2](./images/t25.PNG) | ![Part 2](./images/t26.PNG) | ![Part 2](./images/t27.PNG) 
 
-Notice that lower values of `ks` make the cloth more “jiggly” and behave more erratically, while high values make it appear stiffer. We can understand this phenomenon if we think about how `ks` is used in the simulation. `ks` is used in Hooke's law to generate a force described by the equation $k_s * (\lVertp_a - p_b\rVert - l)$. A larger value of `ks` will make for a larger force. This force is applied to the `PointMass`es within each `Spring` in order to stabilize it. As the force gets larger and larger, it will overpower other forces acting on the `PointMasses`, making them more and more rigid.
+Notice that lower values of `ks` make the cloth more “jiggly” and behave more erratically, while high values make it appear stiffer. We can understand this phenomenon if we think about how `ks` is used in the simulation. `ks` is used in Hooke's law to generate a force described by the equation $k_s * (\lVert p_a - p_b\rVert - l)$. A larger value of `ks` will make for a larger force. This force is applied to the `PointMass`es within each `Spring` in order to stabilize it. As the force gets larger and larger, it will overpower other forces acting on the `PointMasses`, making them more and more rigid.
 
 Next we can change the `density` value. This produces results most notable when looking at the rest state of the cloth.
 
