@@ -160,6 +160,54 @@ Here are various `ks` values on the cloth. The screenshots are taken shortly aft
 
 Recall that high `ks` values push `Spring`s apart from each other. We can see this in the images above. Lower `ks` values result in the cloth bunching up more randomly and more tightly, while higher values cause it to look more smooth.
 
+## Part 5: Shaders
 
+For this part of the project I implemented various shaders for my cloth simulation using GLSL. This language uses C like syntax to specify how the vertices of a given texture will change as well as how those vertices will be shaded. The reason I used an extended language instead of just defining my shaders in C++ is that this language is optimized to be parallelized and split across multiple GPUs, ensure that my renders will be able to operate in real time with the added benefit of ensuring my CPU will not spontaneously combust when I try to run them.
+
+GLSL breaks shaders down into a two component pipeline of vertex and fragment shaders. Vertex shaders describe how individual vertices of a mesh will be displaced by the shader. This is of particular relevance in implementing bump mapping and displacement shading.
+
+After the vertex shader comes the fragment shader. The vertex shader sends variables to a specific output to be used by the fragment shade. The fragment shader shades all the individual fragments however they should be. This could be using Blinn-Phong, diffuse, or a custom texture.
+
+### Blinn-Phong Shading
+
+One of the first shading algorithms I implemented was Blinn-Phong. This is a good starting point as it is a fairly simple shading model that does not involve modifying the vertex positions. Blinn-Phong as who component light sources that get combined together in the final render. The first is ambient lighting, meaning it shows the lighting of the scene. The second is specular reflection, meaning the shiny and off center reflections of light that allow the object to look photoreal.
+
+We can take a look at the individual components of the shader as well as how they come together to create our final render.
+
+Only Diffuse         | Only Specular             |  Diffuse + Specular
+:------------:|:--------------:|:---------------------:
+![Part 5](./images/t51.PNG) | ![Part 5](./images/t52.PNG) | ![Part 5](./images/t53.PNG)
+
+### Texture Shading
+
+In addition to lighting simulations, we can also map textures to the cloth. Here is a nice picture of me that I took in Peru this January a few days before having to flee the country due to political violence stretched over the cloth texture in two positions
+
+Mid Drop        | Over Sphere        
+:------------:|:--------------:
+![Part 5](./images/t54.PNG) | ![Part 5](./images/t55.PNG) 
+
+### Bump / Displacement Mapping
+
+From there we can move on to textures which also involve changing the actual position of the vertices as well as applying shading. Here is a bump mapped texture at two different sphere resolutions. 
+
+Resolution = 16       | Resolution = 16      
+:------------:|:--------------:
+![Part 5](./images/t56.PNG) | ![Part 5](./images/t57.PNG) 
+
+And here is a displacement mapping at two different sphere resolutions.
+
+Resolution = 128      | Resolution = 128       
+:------------:|:--------------:
+![Part 5](./images/t58.PNG) | ![Part 5](./images/t59.PNG) 
+
+COMPARE
+
+### Mirror Shader
+
+Finally, we can also implement a mirror shader.
+
+Mid Drop        | Over Sphere        
+:------------:|:--------------:
+![Part 5](./images/t510.PNG) | ![Part 5](./images/t511.PNG) 
 
 Write up link: https://alexschedel.github.io/AlexSchedel-cs284a-writeups/
