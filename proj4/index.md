@@ -60,7 +60,7 @@ The final part of this implementation involves constraining the `Spring`s so tha
 
 Here are a few screenshots showing the cloth as it falls with the default parameters.
 
-.         | .             | .      | . 
+Before Fall         | Starting Fall  | Middle Fall      | Rest State 
 :------------:|:--------------:|:---------------------:|:-------:
 ![Part 2](./images/t21.PNG) | ![Part 2](./images/t22.PNG) | ![Part 2](./images/t23.PNG) | ![Part 2](./images/t24.PNG)
 
