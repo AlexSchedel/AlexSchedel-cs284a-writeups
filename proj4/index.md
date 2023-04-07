@@ -200,7 +200,7 @@ Resolution = 128      | Resolution = 128
 :------------:|:--------------:
 ![Part 5](./images/t58.PNG) | ![Part 5](./images/t59.PNG) 
 
-COMPARE
+Note that the displacement map is more effective at creating interesting geometry than the bump map at both resolutions. Additionally, the textures looks better and clearer at high resolution. Finally, with regard to displacement mapping if you look closely at the left side of the cloth you can clearly see that the higher resolution image appears smoother.
 
 ### Mirror Shader
 
