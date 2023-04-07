@@ -8,6 +8,8 @@ nav_order: 1
 
 ## Overview
 
+In this project, I implemented a cloth simulator as well as shaders to make the cloth look more realistic. The cloth sim is a point and spring based system, which allows for efficient simulation of real world forces. Additionally, I added constraints on the springs and implemented collisions with planes, spheres, and the cloth itself to make everything look more realistic. For the shader part of the project, I used GLSL to implement efficient shader rendering for my cloth simulation.
+
 ## Part 1: Masses and Springs
 
 To begin the project, I first used `PointMass` and `Spring` structs to create a simple cloth mesh.
